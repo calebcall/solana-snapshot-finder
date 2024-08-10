@@ -341,6 +341,7 @@ def download(url: str):
         except Exception as unknwErr:
             logger.error(f'Exception in download() func. Make sure wget is installed\n{unknwErr}')
     else:
+        logger.info(f'Using {client_path} to download')
         try:
             if MAX_DOWNLOAD_SPEED_MB:
                 process = subprocess.run([client_path, '--continue', '--split=16', '--max-connection-per-server=16', '--min-split-size=5M', 
@@ -356,8 +357,6 @@ def download(url: str):
         
         except Exception as unknwErr:
             logger.error(f'Exception in download() func. Make sure aria2 is installed\n{unknwErr}')
-
-
 
 
 def main_worker():
