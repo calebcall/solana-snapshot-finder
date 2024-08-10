@@ -343,13 +343,13 @@ def download(url: str):
     else:
         try:
             if MAX_DOWNLOAD_SPEED_MB:
-                process = subprocess.run([client_path, '--continue', '-split=16', '--max-connection-per-server=16', '--min-split-size=5M', 
+                process = subprocess.run([client_path, '--continue', '--split=16', '--max-connection-per-server=16', '--min-split-size=5M', 
                                           '--max-concurrent-downloads=5', f'--max-overall-download-limit={MAX_DOWNLOAD_SPEED_MB}M', 
                                           f'--dir={temp_fname}', url ],
                 stdout=subprocess.PIPE,
                 universal_newlines=True)
             else:
-                process = subprocess.run([client_path, '--continue', '-split=16', '--max-connection-per-server=16', '--min-split-size=5M', 
+                process = subprocess.run([client_path, '--continue', '--split=16', '--max-connection-per-server=16', '--min-split-size=5M', 
                                           '--max-concurrent-downloads=5', f'--dir={temp_fname}', url ],
                 stdout=subprocess.PIPE,
                 universal_newlines=True)
