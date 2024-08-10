@@ -40,6 +40,7 @@ parser.add_argument('--num_of_retries', default=5, type=int, help='The number of
 parser.add_argument('--sleep', default=7, type=int, help='Sleep before next retry (seconds)')
 parser.add_argument('--sort_order', default='slots_diff', type=str, help='Priority way to sort the found servers. latency or slots_diff')
 parser.add_argument('-ipb', '--ip_blacklist', default='', type=str, help='Comma separated list of ip addresse (ip:port) that will be excluded from the scan. Example: -ipb 1.1.1.1:8899,8.8.8.8:8899')
+parser.add_argument('-c', '--client', default='wget', type=str, help='Download client to use, wget or aria2c.  Default is wget.')
 parser.add_argument('-b', '--blacklist', default='', type=str, help='If the same corrupted archive is constantly downloaded, you can exclude it.'
                     ' Specify either the number of the slot you want to exclude, or the hash of the archive name. '
                     'You can specify several, separated by commas. Example: -b 135501350,135501360 or --blacklist 135501350,some_hash')
@@ -65,6 +66,7 @@ SORT_ORDER = args.sort_order
 BLACKLIST = str(args.blacklist).split(",")
 IP_BLACKLIST = str(args.ip_blacklist).split(",")
 FULL_LOCAL_SNAP_SLOT = 0
+CLIENT = args.client
 
 current_slot = 0
 DISCARDED_BY_ARCHIVE_TYPE = 0
@@ -318,24 +320,47 @@ def download(url: str):
 
     # except (ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError) as downlErr:
     #     logger.error(f'Exception in download() func\n {downlErr}')
+    
+    if CLIENT == 'wget':
+        logger.info(f'Using {client_path} to download')
+        try:
+            # dirty trick with wget. Details here - https://github.com/c29r3/solana-snapshot-finder/issues/11
+            if MAX_DOWNLOAD_SPEED_MB is not None:
+                process = subprocess.run([client_path, '--progress=dot:giga', f'--limit-rate={MAX_DOWNLOAD_SPEED_MB}M',
+                                        '--trust-server-names', url, f'-O{temp_fname}'],
+                stdout=subprocess.PIPE,
+                universal_newlines=True)
+            else:                
+                process = subprocess.run([client_path, '--progress=dot:giga', '--trust-server-names', url, f'-O{temp_fname}'],
+                stdout=subprocess.PIPE,
+                universal_newlines=True)
 
-    try:
-        # dirty trick with wget. Details here - https://github.com/c29r3/solana-snapshot-finder/issues/11
-        if MAX_DOWNLOAD_SPEED_MB is not None:
-            process = subprocess.run([wget_path, '--progress=dot:giga', f'--limit-rate={MAX_DOWNLOAD_SPEED_MB}M',
-                                      '--trust-server-names', url, f'-O{temp_fname}'],
-              stdout=subprocess.PIPE,
-              universal_newlines=True)
-        else:
-            process = subprocess.run([wget_path, '--progress=dot:giga', '--trust-server-names', url, f'-O{temp_fname}'],
-              stdout=subprocess.PIPE,
-              universal_newlines=True)
+            logger.info(f'Rename the downloaded file {temp_fname} --> {fname}')
+            os.rename(temp_fname, f'{SNAPSHOT_PATH}/{fname}')
 
-        logger.info(f'Rename the downloaded file {temp_fname} --> {fname}')
-        os.rename(temp_fname, f'{SNAPSHOT_PATH}/{fname}')
+        except Exception as unknwErr:
+            logger.error(f'Exception in download() func. Make sure wget is installed\n{unknwErr}')
+    else:
+        try:
+            if MAX_DOWNLOAD_SPEED_MB:
+                process = subprocess.run([client_path, '--continue', '-split 16', '--max-connection-per-server 16', '--min-split-size 5M', 
+                                          '--max-concurrent-downloads 5', f'--max-overall-download-limit={MAX_DOWNLOAD_SPEED_MB}M', 
+                                          f'--dir {temp_fname}', url ],
+                stdout=subprocess.PIPE,
+                universal_newlines=True)
+            else:
+                process = subprocess.run([client_path, '--continue', '-split 16', '--max-connection-per-server 16', '--min-split-size 5M', 
+                                          '--max-concurrent-downloads 5', f'--dir {temp_fname}', url ],
+                stdout=subprocess.PIPE,
+                universal_newlines=True)
 
-    except Exception as unknwErr:
-        logger.error(f'Exception in download() func. Make sure wget is installed\n{unknwErr}')
+            logger.info(f'Rename the downloaded file {temp_fname} --> {fname}')
+            os.rename(temp_fname, f'{SNAPSHOT_PATH}/{fname}')
+        
+        except Exception as unknwErr:
+            logger.error(f'Exception in download() func. Make sure aria2 is installed\n{unknwErr}')
+
+
 
 
 def main_worker():
@@ -475,9 +500,11 @@ except IOError:
     logger.error(f'\nCheck {SNAPSHOT_PATH=} and permissions')
     Path(SNAPSHOT_PATH).mkdir(parents=True, exist_ok=True)
 
-wget_path = shutil.which("wget")
+if CLIENT = 'wget':
+    client_path = shutil.which("wget")
 
-if wget_path is None:
+
+if client_path is None:
     logger.error("The wget utility was not found in the system, it is required")
     sys.exit()
 
