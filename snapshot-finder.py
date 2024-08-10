@@ -349,13 +349,10 @@ def download(url: str):
                 stdout=subprocess.PIPE,
                 universal_newlines=True)
             else:
-                process = subprocess.run([client_path, '--continue', '--split=16', '--max-connection-per-server=16', '--min-split-size=5M', 
-                                          '--max-concurrent-downloads=5', f'--dir={SNAPSHOT_PATH}', f'--out=tmp-{fname}', url ],
+                process = subprocess.run([client_path, '--continue', '--split=16', '--max-connection-per-server=1', '--min-split-size=100M', 
+                                          '--max-concurrent-downloads=16', f'--dir={SNAPSHOT_PATH}', f'--out={fname}', url ],
                 stdout=subprocess.PIPE,
                 universal_newlines=True)
-
-            logger.info(f'Rename the downloaded file {temp_fname} --> {fname}')
-            os.rename(temp_fname, f'{SNAPSHOT_PATH}/{fname}')
         
         except Exception as unknwErr:
             logger.error(f'Exception in download() func. Make sure aria2 is installed\n{unknwErr}')
