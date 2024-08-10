@@ -500,13 +500,14 @@ except IOError:
     logger.error(f'\nCheck {SNAPSHOT_PATH=} and permissions')
     Path(SNAPSHOT_PATH).mkdir(parents=True, exist_ok=True)
 
-if CLIENT = 'wget':
+if CLIENT == 'wget':
     client_path = shutil.which("wget")
-
-
-if client_path is None:
-    logger.error("The wget utility was not found in the system, it is required")
+elif CLIENT == 'aria2c':
+    client_path = shutil.which("aria2c")
+else:
+    logger.error("Only wget or aria2c are the only supported clients.  You must install one of them")
     sys.exit()
+
 
 json_data = ({"last_update_at": 0.0,
               "last_update_slot": 0,
