@@ -321,8 +321,8 @@ def download(url: str):
     # except (ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError) as downlErr:
     #     logger.error(f'Exception in download() func\n {downlErr}')
     
+    logger.info(f'Using {client_path} to download')
     if CLIENT == 'wget':
-        logger.info(f'Using {client_path} to download')
         try:
             # dirty trick with wget. Details here - https://github.com/c29r3/solana-snapshot-finder/issues/11
             if MAX_DOWNLOAD_SPEED_MB is not None:
@@ -341,7 +341,6 @@ def download(url: str):
         except Exception as unknwErr:
             logger.error(f'Exception in download() func. Make sure wget is installed\n{unknwErr}')
     else:
-        logger.info(f'Using {client_path} to download')
         try:
             if MAX_DOWNLOAD_SPEED_MB:
                 process = subprocess.run([client_path, '--continue', '--split=16', '--max-connection-per-server=16', '--min-split-size=5M', 

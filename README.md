@@ -54,6 +54,8 @@ options:
   -ipb IP_BLACKLIST, --ip_blacklist IP_BLACKLIST
                         Comma separated list of ip addresse (ip:port) that will be excluded from the
                         scan. Example: -ipb 1.1.1.1:8899,8.8.8.8:8899
+  -c CLIENT, --client CLIENT
+                        Download client to use, wget or aria2c.  Default is wget.
   -b BLACKLIST, --blacklist BLACKLIST
                         If the same corrupted archive is constantly downloaded, you can exclude it.
                         Specify either the number of the slot you want to exclude, or the hash of the
